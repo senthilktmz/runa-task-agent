@@ -52,7 +52,7 @@ async fn main() -> std::io::Result<()> {
 
 fn get_http_request_decrypt_key() -> &'static [u8; 32] {
     let test_key = &b"0123456789abcdef0123456789abcdef";
-    return test_key
+    test_key
 }
 
 fn inject_dependencies() -> Result<Arc<Box<dyn Any + Send + Sync>>, String> {
@@ -60,7 +60,6 @@ fn inject_dependencies() -> Result<Arc<Box<dyn Any + Send + Sync>>, String> {
         Arc::new(Box::new(ServerExecDependencies{
             http_request_decrypt_key: get_http_request_decrypt_key(),
         }));
-    //dependencies
     Ok(dependencies)
 }
 //
