@@ -1,8 +1,8 @@
 use actix_web::{web, HttpResponse};
+use runautils::actix_server_util::ServerContext;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use runautils::actix_server_util::ServerContext;
 
 async fn post_req(body: web::Json<String>, path: &'static str) -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({ "received": *body, "path": path }))
@@ -11,8 +11,7 @@ async fn post_req(body: web::Json<String>, path: &'static str) -> HttpResponse {
 pub fn post_handler(
     body: web::Json<String>,
     path: &'static str,
-    server_context :Arc<ServerContext>,
+    server_context: Arc<ServerContext>,
 ) -> Pin<Box<dyn Future<Output = HttpResponse>>> {
     Box::pin(post_req(body, path))
 }
-
