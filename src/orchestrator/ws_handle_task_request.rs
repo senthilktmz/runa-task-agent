@@ -63,6 +63,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
                         // Close the connection after the 5th message
                         if i == 5 {
                             println!("Closing connection after sending the last message.");
+                            ctx.close(Some(ws::CloseReason {
+                                code: ws::CloseCode::Normal,
+                                description: Some("Task completed".to_string()),
+                            }));
                             ctx.stop();
                         }
                     });
