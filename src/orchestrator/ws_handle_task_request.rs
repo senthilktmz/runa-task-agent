@@ -8,6 +8,9 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use runautils::actix_server_util::ServerStateStore;
 use crate::orchestrator::payload_util::extract_payload_from_string;
+use std::thread;
+use std::time::Duration;
+use actix::AsyncContext; // Add this import
 
 pub fn websocket_handler2(
     req: actix_web::HttpRequest,
@@ -33,7 +36,7 @@ impl Actor for WebSocketActor {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        println!("WebSocket connection started");
+        println!("WebSocket connection started by the task executor");
     }
 
     fn stopped(&mut self, _ctx: &mut Self::Context) {
@@ -45,53 +48,34 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         match msg {
             Ok(ws::Message::Text(text)) => {
+                println!("Received WebSocket message: {}", text);
 
-                let json_request = text.to_string();
-                match extract_payload_from_string(text.to_string(), "N/A", &self.server_context) {
-                    Ok(json_payload) => {
-                        println!("Received json payload: {:?}", json_payload);
-                        // Parse the JSON text
-                        let (json_string, _) = json_payload;
-                        match serde_json::from_str::<Value>(json_string.as_str()) {
-                            Ok(json_value) => {
-                                println!("Parsed JSON: {:?}", json_value);
+                // Send immediate test message
+                ctx.text("Received your message");
 
-                                // Process the JSON message
-                                let response = process_json_message(&json_value, &self.server_context, &self.server_state_store);
-
-                                // Send the response back to the client
-                                match response {
-                                    Ok(response_text) => ctx.text(response_text),
-                                    Err(err) => ctx.text(format!("Error: {}", err)),
-                                }
-                            }
-                            Err(err) => {
-                                println!("Failed to parse JSON: {}", err);
-                                ctx.text(format!("Invalid JSON: {}", err));
-                            }
-                        }
-                    },
-                    Err(err) => {
-                        println!("Received error payload: {:?}", err);
-                    }
+                // Simple loop to send 5 messages
+                for i in 1..=5 {
+                    let i = i;
+                    ctx.run_later(Duration::from_secs(i), move |_, ctx| {
+                        let msg = format!("message {}", i);
+                        println!("Sending: {}", msg);
+                        ctx.text(msg);
+                    });
                 }
             }
-            Ok(ws::Message::Binary(bin)) => {
-                println!("Received binary message: {:?}", bin);
-                ctx.binary(bin); // Echo the binary message back
+            Ok(ws::Message::Ping(msg)) => {
+                println!("Ping received");
+                ctx.pong(&msg);
             }
             Ok(ws::Message::Close(_)) => {
-                println!("Client closed the connection");
+                println!("Client closed connection");
                 ctx.stop();
             }
-            Err(err) => {
-                println!("WebSocket error: {}", err);
-                ctx.stop();
-            }
-            _ => (),
+            _ => println!("Other message type received"),
         }
     }
 }
+
 
 /// Function to process the JSON message
 fn process_json_message(
