@@ -55,11 +55,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
 
                 // Simple loop to send 5 messages
                 for i in 1..=5 {
-                    let i = i;
                     ctx.run_later(Duration::from_secs(i), move |_, ctx| {
                         let msg = format!("message {}", i);
                         println!("Sending: {}", msg);
                         ctx.text(msg);
+
+                        // Close the connection after the 5th message
+                        if i == 5 {
+                            println!("Closing connection after sending the last message.");
+                            ctx.stop();
+                        }
                     });
                 }
             }
