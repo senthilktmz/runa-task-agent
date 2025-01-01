@@ -27,7 +27,7 @@ pub fn websocket_handler2(
     })
 }
 
-struct WebSocketActor {
+pub struct WebSocketActor {
     server_context: Arc<Box<dyn Any + Send + Sync>>,
     server_state_store: Arc<Mutex<ServerStateStore>>,
 }
@@ -52,7 +52,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
 
                 match extract_payload_from_string(text.parse().unwrap(), "", &self.server_context) {
                     Ok((decrypted_payload, original_body)) => {
-                        match process_run_task_set(decrypted_payload) {
+                        match process_run_task_set(decrypted_payload, ctx) {
                            Ok(response) => {
                                println!("Processed response from the task executor");
                            } ,
@@ -63,10 +63,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
                     }
                     Err(err) => {
                         println!("Error in extract_payload: {}", err);
-                        // Box::pin(async {
-                        //     HttpResponse::InternalServerError()
-                        //         .body(format!("Error: {}", "payload format wrong"))
-                        // })
                     }
                 }
 
