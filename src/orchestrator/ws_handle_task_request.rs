@@ -65,28 +65,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
                         println!("Error in extract_payload: {}", err);
                     }
                 }
-
-                // Send immediate test message
-                ctx.text("Received your message");
-
-                // Simple loop to send 5 messages
-                for i in 1..=5 {
-                    ctx.run_later(Duration::from_secs(i), move |_, ctx| {
-                        let msg = format!("message {}", i);
-                        println!("Sending: {}", msg);
-                        ctx.text(msg);
-
-                        // Close the connection after the 5th message
-                        if i == 5 {
-                            println!("Closing connection after sending the last message.");
-                            ctx.close(Some(ws::CloseReason {
-                                code: ws::CloseCode::Normal,
-                                description: Some("Task completed".to_string()),
-                            }));
-                            ctx.stop();
-                        }
-                    });
-                }
             }
             Ok(ws::Message::Ping(msg)) => {
                 println!("Ping received");
@@ -94,6 +72,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
             }
             Ok(ws::Message::Close(_)) => {
                 println!("Client closed connection");
+                ctx.text("Client closed connection");
                 ctx.stop();
             }
             _ => println!("Other message type received"),

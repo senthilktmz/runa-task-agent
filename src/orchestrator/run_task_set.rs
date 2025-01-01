@@ -50,36 +50,6 @@ pub fn process_run_task_set(task_set_json_str: String,
     Ok("success".to_string())
 }
 
-fn process_bash_command(task_node: &TaskNode) -> Result<String, Box<dyn Error>>{
-    if task_node.script.is_empty() {
-        return Err("empty script".into())
-    }
-
-    let tmp_file_name = get_tmp_file_path("/tmp");
-    fs::write(&tmp_file_name, &task_node.script)?;
-    println!("Script written to temporary file: {:?}", tmp_file_name);
-    let mut env_vars = HashMap::<String, String>::new();
-
-
-    let tmp_file_str = tmp_file_name
-        .to_str()
-        .ok_or_else(|| "Could not convert temporary file path to string")?;
-
-    match run_bash_script("/tmp", tmp_file_str, env_vars) {
-        Ok(output) => {
-            println!("Script executed successfully. {} ", String::from_utf8_lossy(output.stdout.as_slice()));
-        }
-        Err(err) => {
-            eprintln!("Error while executing script: {}", err);
-            return Err(err); // Propagate the error
-        }
-    }
-
-    Ok("ok".to_string())
-}
-
-
-
 fn process_bash_command_with_outpu_streaming(
     task_node: &TaskNode,
     ctx: &mut ws::WebsocketContext<WebSocketActor>,
