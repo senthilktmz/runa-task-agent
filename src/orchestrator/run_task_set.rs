@@ -81,7 +81,7 @@ fn process_bash_command_with_outpu_streaming(
         for line in reader.lines() {
             let line = line?;
             println!("stdout: {}", line); // Log locally
-            ctx.text(format!("stdout: {}", line)); // Send to WebSocket
+            ctx.text(format!("{}", line)); // Send to WebSocket
         }
     }
 
@@ -90,7 +90,7 @@ fn process_bash_command_with_outpu_streaming(
         for line in reader.lines() {
             let line = line?;
             eprintln!("stderr: {}", line); // Log locally
-            ctx.text(format!("stderr: {}", line)); // Send to WebSocket
+            ctx.text(format!("{}", line)); // Send to WebSocket
         }
     }
 
