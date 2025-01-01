@@ -8,9 +8,9 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use runautils::actix_server_util::ServerStateStore;
 use crate::orchestrator::payload_util::extract_payload_from_string;
-use std::thread;
 use std::time::Duration;
-use actix::AsyncContext; // Add this import
+use actix::AsyncContext;
+use crate::orchestrator::run_task_set::process_run_task_set;
 
 pub fn websocket_handler2(
     req: actix_web::HttpRequest,
@@ -49,6 +49,26 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocketActor {
         match msg {
             Ok(ws::Message::Text(text)) => {
                 println!("Received WebSocket message: {}", text);
+
+                match extract_payload_from_string(text.parse().unwrap(), "", &self.server_context) {
+                    Ok((decrypted_payload, original_body)) => {
+                        match process_run_task_set(decrypted_payload) {
+                           Ok(response) => {
+                               println!("Processed response from the task executor");
+                           } ,
+                            Err(err) => {
+                                println!("Error processing response from task executor: {}", err);
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        println!("Error in extract_payload: {}", err);
+                        // Box::pin(async {
+                        //     HttpResponse::InternalServerError()
+                        //         .body(format!("Error: {}", "payload format wrong"))
+                        // })
+                    }
+                }
 
                 // Send immediate test message
                 ctx.text("Received your message");
